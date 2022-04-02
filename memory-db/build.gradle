@@ -1,0 +1,8 @@
+dependencies {
+    implementation(project(":api"))
+
+    implementation("net.bytebuddy:byte-buddy:latest.integration")
+    implementation("net.bytebuddy:byte-buddy-agent:latest.integration")
+    implementation("com.oop:memory-store:latest.integration")
+    implementation("com.google.guava:guava:31.0.1-jre")
+}

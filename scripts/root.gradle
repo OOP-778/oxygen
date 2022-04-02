@@ -1,0 +1,52 @@
+// DO NOT TOUCH
+apply from: "$rootDir/scripts/commons.gradle"
+apply from: "$rootDir/scripts/creds.gradle"
+
+ext.isCI = System.getenv("CI_PIPELINE_IID") != null
+apply from: "$rootDir/scripts/env.gradle"
+
+ext.NEXUS_CREDS = getRepoCredentials()
+ext.MULTI_MODULE_PROJECT = allprojects.size() > 1
+ext.BRANCH = java.util.Optional.ofNullable(getEnv("CI_COMMIT_REF_NAME")).orElse("None")
+ext.PUBLISH = true
+
+apply from: "$rootDir/scripts/repositories.gradle"
+
+allprojects {
+    // Apply default plugins
+    apply {
+        plugin 'java'
+        plugin 'com.github.johnrengelman.shadow'
+        plugin 'java-library'
+        plugin 'maven-publish'
+    }
+
+    // Make so dependencies can can be updated every 20 seconds
+    configurations.all {
+        resolutionStrategy.cacheDynamicVersionsFor(20, "seconds")
+    }
+
+    // Set EXT variables & methods
+    ext.isCI = isCI
+    ext.NEXUS_CREDS = NEXUS_CREDS
+    ext.MULTI_MODULE_PROJECT = MULTI_MODULE_PROJECT
+    ext.BRANCH = BRANCH
+
+    tasks {
+        // Set encoding of files to UTF-8
+        compileJava.options.encoding = 'UTF-8'
+
+        // Make sure shadowJar gets ran while building
+        build {
+            dependsOn(shadowJar)
+        }
+
+        // Setup default ShadowJar options
+        shadowJar {
+            destinationDirectory.set(file("$projectDir/out"))
+            archiveFileName.set("${project.name}.jar")
+        }
+    }
+}
+
+// DO NOT TOUCH

@@ -1,0 +1,81 @@
+apply from: "$rootDir/scripts/commons.gradle"
+apply from: "$rootDir/scripts/creds.gradle"
+
+def data = getRepoCredentials()
+if (data[0] == null) {
+    System.err.println("> Credentials file is not setup for nexus! Please create a file at ${data[1]} with the the first line as username" +
+            " and second as password")
+    return
+}
+
+def rootProjectName = isGitRepo() ? repoName() : rootDir.name
+rootProject.name = rootProjectName
+
+ext.isCI = System.getenv("CI_PIPELINE_IID") != null
+ext.BRANCH = executeCmd("git rev-parse --abbrev-ref HEAD")
+
+def discoverRoot() {
+    def path = new LinkedList<String>()
+
+    for (File file : rootDir.listFiles()) {
+        if (!file.isDirectory()) {
+            continue
+        }
+
+        discoverProjects(path, file)
+    }
+}
+
+def discoverProjects(List<String> parents, File dir) {
+    if (dir.list {file, name -> name.contentEquals("build.gradle") }.length == 0) {
+        return
+    }
+
+    for (File file : dir.listFiles()) {
+        LinkedList<String> newParents = new LinkedList<>(parents)
+        newParents.add(dir.name)
+
+        if (file.isDirectory()) {
+            if (file.name.contains(".gradle") || file.name.contains(".idea") || file.name.contains("build")) {
+                continue
+            }
+
+            discoverProjects(newParents, file)
+            continue
+        }
+
+        if (file.name.contentEquals("build.gradle")) {
+            // Find and Include the project
+            def projectId = String.join(":", newParents)
+
+            if (rootProject.projectDir.name == dir.name) {
+                continue
+            }
+
+            def foundProject = findProject(projectId)
+            if (foundProject == null) {
+                include(projectId)
+                foundProject = project(":${projectId}")
+            }
+
+            def newProjectName
+            if (newParents.size() >= 2) {
+                def projectName = newParents.pollLast()
+                def group = newParents.pollLast()
+
+                newProjectName = "$group-$projectName"
+            } else {
+                newProjectName = dir.name
+            }
+
+            foundProject.name = newProjectName
+            println("Found project id: $projectId, name: $newProjectName")
+        }
+    }
+}
+
+discoverRoot()
+
+if (isCI) {
+    System.out.println("> Building project $rootProjectName and branch $BRANCH")
+}

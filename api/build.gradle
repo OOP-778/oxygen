@@ -1,0 +1,7 @@
+dependencies {
+    implementation("net.bytebuddy:byte-buddy:latest.integration")
+    implementation("net.bytebuddy:byte-buddy-agent:latest.integration")
+    implementation("com.oop:memory-store:latest.integration")
+    implementation("it.unimi.dsi:fastutil:8.5.6")
+    implementation(project(":event"))
+}

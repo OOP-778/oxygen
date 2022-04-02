@@ -1,0 +1,59 @@
+// If ci, should publish
+if (isCI) {
+    allprojects {
+        if (MULTI_MODULE_PROJECT && rootProject.name == name) {
+            return
+        }
+
+        if (PUBLISH) {
+            System.out.println("> Configuring publish for ${project.name}")
+
+            def shadowJar = tasks.findByName("shadowJar")
+
+            project.tasks.build.dependsOn(publish)
+
+            tasks {
+                publish {
+                    shouldRunAfter(shadowJar)
+                }
+            }
+
+            publishing {
+                repositories {
+                    maven {
+                        url = Objects.requireNonNull(PUBLISH_REPO, "Publishing repository is not defined!")
+                        allowInsecureProtocol = true
+                        credentials {
+                            username = NEXUS_CREDS[0]
+                            password = NEXUS_CREDS[1]
+                        }
+                    }
+                }
+
+                publications {
+                    mavenJava(MavenPublication.class) {
+                        artifact(shadowJar.archiveFile)
+                        String root = MULTI_MODULE_PROJECT ? rootProject.name : null
+                        groupId = GROUP
+
+                        if (root != null) {
+                            groupId = "$groupId.$root"
+                        }
+
+                        if (BRANCH.contentEquals("main")) {
+                            artifactId = project.name
+                        } else {
+                            artifactId = "${project.name}-$BRANCH"
+                        }
+
+                        if (root != null) {
+                            artifactId = "$root-$artifactId"
+                        }
+
+                        version = VERSION
+                    }
+                }
+            }
+        }
+    }
+}

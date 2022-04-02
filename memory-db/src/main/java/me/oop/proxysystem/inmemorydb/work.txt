@@ -1,0 +1,28 @@
+To create in memory database
+- You can create entities from templates
+- You can create indexes to look thru when querying one
+- You can create persisting system
+- Hook to changes
+
+Field Visitor ->
+
+  field component ->
+    field -> path
+    path -> field
+
+  root entity ->
+    field a, b, c
+
+    a ->
+      field a, b, c
+
+    a.a
+
+Proxy Class ->
+  -> NewInstanceEvent
+    -> Create locks, etc, etc.
+    -> Apply template
+  -> ValueChangedEvent
+    -> Listen to value changes maps, collections, primitives supported
+  -> DisposeEvent
+    -> Listen to whenever entity gets disposed

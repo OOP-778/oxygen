@@ -1,0 +1,62 @@
+import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
+import java.util.regex.Pattern
+import java.util.stream.Collectors
+
+final def REPO_NAME_PATTERN = Pattern.compile("([^/]+)\\.git")
+
+static def readOutput(InputStream stream) {
+    def reader = new BufferedReader(new InputStreamReader(stream))
+    return reader.lines().collect(Collectors.joining("\n"))
+}
+
+ext.isGitRepo = {
+    String value = executeCmd("git remote -v")
+    return !value.contains("not a git repository")
+}
+
+ext.repoName = {
+    String value = executeCmd("git remote -v")
+    def matcher = REPO_NAME_PATTERN.matcher(value)
+
+    if (!matcher.find()) {
+        return "Unknown"
+    }
+
+    return matcher.group(1)
+}
+
+ext.executeCmd = { cmd ->
+    def proc = Runtime.getRuntime().exec(cmd)
+    proc.waitFor(1, TimeUnit.SECONDS)
+
+    def errors = readOutput(proc.errorStream)
+    def out = readOutput(proc.inputStream)
+
+    if (!errors.isEmpty()) {
+        return errors
+    } else {
+        return out
+    }
+}
+
+ext.getEnv = { String key ->
+    def value = System.getenv(key)
+
+    if (value == null) {
+        value = System.getProperty(key)
+    }
+
+    return value
+}
+
+ext.findModule = { String contains ->
+    return getAllprojects().stream()
+        .filter(p -> p.name.contains(contains))
+        .findFirst()
+        .orElseThrow(() -> new Throwable("Failed to find project that contains $contains"))
+}
+
+ext.configureProject = { String name, Consumer<Project> configurer ->
+    configurer.accept(Objects.requireNonNull(findProject(name), "Failed to find project by name $name"))
+}

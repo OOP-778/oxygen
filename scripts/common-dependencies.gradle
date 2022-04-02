@@ -1,0 +1,7 @@
+allprojects {
+    dependencies {
+        compileOnly("org.projectlombok:lombok:latest.integration")
+        annotationProcessor("org.projectlombok:lombok:latest.integration")
+        implementation("org.jetbrains:annotations:latest.integration")
+    }
+}

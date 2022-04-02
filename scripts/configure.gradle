@@ -1,0 +1,8 @@
+apply from: "$rootDir/scripts/root.gradle"
+
+// Configure per project options
+// Example:
+//configureProject("project-template", p -> p.ext.PUBLISH = false)
+
+apply from: "$rootDir/scripts/publish.gradle"
+apply from: "$rootDir/scripts/common-dependencies.gradle"

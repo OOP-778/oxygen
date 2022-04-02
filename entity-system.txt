@@ -1,0 +1,3 @@
+Component
+ - Can listen to other component changes
+ - Can choose how to tick, before other components or in any case
